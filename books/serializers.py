@@ -10,7 +10,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'email', 'name',
-            'password')
+            'password', 'image')
         extra_kwargs = {'password': {
             'write_only': True, 'style': {
                 'input_type': 'password', 'placeholder': 'Password'}
@@ -61,7 +61,7 @@ class BooksSerializer(serializers.ModelSerializer):
         model = models.Books
         fields = ['id', 'title', 'author', 'editor',
                   'price', 'description',
-                  'release_date', 'language', 'category']
+                  'release_date', 'language', 'category', 'image']
         # extra_kwargs = {
         #     'url': {'view_name': 'books:books-detail',
         #             'lookup_field': 'title'}
@@ -72,18 +72,21 @@ class BooksSerializer(serializers.ModelSerializer):
 class ReadBooksSerializer(serializers.ModelSerializer):
     """Serializer for user's read books"""
     book_title = serializers.ReadOnlyField()
+    book_image = serializers.ImageField()
     class Meta:
         model = models.ReadBooks
-        fields = ['id', 'book', 'book_title']
+        fields = ['id', 'book', 'book_title', 'book_image']
 
 
 class ReadBooksAddSerializer(serializers.ModelSerializer):
     """Serializer for adding a new book to the read books model"""
     book_id = serializers.IntegerField()
+    book_title = serializers.ReadOnlyField()
+    book_image = serializers.ReadOnlyField()
 
     class Meta:
         model = models.ReadBooks
-        fields = ['id', 'user', 'book', 'book_id']
+        fields = ['id', 'user', 'book', 'book_id', 'book_title', 'book_image']
         extra_kwargs = {'user': {'read_only':True},
                         }
 
@@ -99,12 +102,18 @@ class ReadBooksAddSerializer(serializers.ModelSerializer):
         return new_read_book
 
 
-class NormalUserBookSerializer(serializers.ModelSerializer):
+class BasicUserBookSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Books
         fields = ['id', 'title', 'author', 'editor',
                   'price', 'description',
-                  'release_date', 'language', 'category']
+                  'release_date', 'language', 'category', 'image']
         read_only_fields = ['id', 'title', 'author', 'editor',
                   'price', 'description',
-                  'release_date', 'language', 'category']
+                  'release_date', 'language', 'category', 'image']
+
+class BasicUserCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Category
+        fields = '__all__'
+        read_only_fields = ['id', 'user', 'category_name']

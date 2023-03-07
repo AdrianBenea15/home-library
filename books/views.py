@@ -4,11 +4,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.settings import api_settings
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework.views import APIView
 from rest_framework import status
-from django.dispatch import receiver
-from django.db.models.signals import post_save
-from django.shortcuts import get_object_or_404
+
 
 from books import models
 from books import permissions
@@ -43,7 +40,17 @@ class CategoryViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     serializer_class = serializers.CategorySerializer
     queryset = models.Category.objects.all()
-    permission_classes = (permissions.IsOwner,)
+    permission_classes = (IsAuthenticated, permissions.StaffPermission)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def get_serializer_class(self):
+        if self.request.user.is_staff:
+            return serializers.CategorySerializer
+        elif self.request.user.is_staff == False:
+            return serializers.BasicUserCategorySerializer
+        return self.serializer_class
 
 
 class BooksViewSet(viewsets.ModelViewSet):
@@ -57,7 +64,7 @@ class BooksViewSet(viewsets.ModelViewSet):
         if self.request.user.is_staff:
             return serializers.BooksSerializer
         elif self.request.user.is_staff == False:
-            return serializers.NormalUserBookSerializer
+            return serializers.BasicUserBookSerializer
         return self.serializer_class
 
     def perform_create(self, serializer):

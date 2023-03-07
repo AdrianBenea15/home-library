@@ -52,5 +52,7 @@ class UserAdmin(BaseUserAdmin):
 admin.site.register(models.UserProfile, UserAdmin)
 admin.site.register(models.Books)
 admin.site.register(models.ReadBooks)
+admin.site.register(models.Editor)
+admin.site.register(models.Category)
 
 

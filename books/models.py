@@ -1,10 +1,22 @@
 from django.conf import settings
 from django.db import models
+import uuid
+import os
 
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 
+
+def book_image(instance, filename):
+    return 'images/{0}.jpg'.format(instance.id)
+
+
+
+def user_image(instance, filename):
+    ext = os.path.splitext(filename)[1]
+    filename = f'{uuid.uuid4()}{ext}'
+    return os.path.join('uploads', 'user', filename)
 
 
 class UserProfileManager(BaseUserManager):
@@ -38,7 +50,8 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
                               unique=True)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    image = models.ImageField(upload_to=user_image, default='profile/default/default.png')
 
 
     objects = UserProfileManager()
@@ -48,6 +61,7 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
 
 class Category(models.Model):
     """Database model for category of books"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     category_name = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
@@ -80,7 +94,8 @@ class Books(models.Model):
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateField(auto_now=True)
     release_date = models.DateField(blank=True, null=True)
-    category = models.CharField(max_length=255, null=True, blank=True)
+    category = models.ManyToManyField('Category')
+    image = models.ImageField(upload_to=book_image, null=True, blank=True)
 
     def __str__(self):
         return self.title + ', ' + str(self.id)
@@ -88,7 +103,7 @@ class Books(models.Model):
 
 class ReadBooks(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
-    book = models.ForeignKey(Books, on_delete=models.CASCADE)
+    book = models.OneToOneField(Books, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.book.title + ', ' + self.book.author
@@ -96,3 +111,7 @@ class ReadBooks(models.Model):
     @property
     def book_title(self):
         return self.book.title + ', ' + self.book.author
+
+    def book_image(self):
+        if self.book.image:
+            return self.book.image
